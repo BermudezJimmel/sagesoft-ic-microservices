@@ -17,14 +17,38 @@ This document compares two approaches for the API Gateway layer in our Employee 
 
 ### **Option 1: AWS API Gateway Service**
 ```
-Employee Portal (Amplify) → AWS API Gateway → Internal ALB → Backend Services
-                            (Managed Service)              (EMP, CORE, AUTH, FILES)
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Employee Portal │───▶│ AWS API Gateway │───▶│  Internal ALB   │───▶│ Backend Services│
+│   (Amplify)     │    │ (Managed Service│    │ (Host Routing)  │    │(EMP,CORE,AUTH,  │
+└─────────────────┘    │ Pay-per-request)│    └─────────────────┘    │    FILES)       │
+                       └─────────────────┘                           └─────────────────┘
+                                │
+                                ▼
+                       ┌─────────────────┐
+                       │ Built-in Features│
+                       │ • Authentication │
+                       │ • Rate Limiting  │
+                       │ • Monitoring     │
+                       │ • Caching        │
+                       └─────────────────┘
 ```
 
 ### **Option 2: Custom API Gateway App (Current)**
 ```
-Employee Portal (Amplify) → Custom API Gateway → Internal ALB → Backend Services
-                            (ECS Fargate)                    (EMP, CORE, AUTH, FILES)
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Employee Portal │───▶│ Custom API      │───▶│  Internal ALB   │───▶│ Backend Services│
+│   (Amplify)     │    │ Gateway App     │    │ (Host Routing)  │    │(EMP,CORE,AUTH,  │
+└─────────────────┘    │ (ECS Fargate)   │    └─────────────────┘    │    FILES)       │
+                       └─────────────────┘                           └─────────────────┘
+                                │
+                                ▼
+                       ┌─────────────────┐
+                       │ Custom Features │
+                       │ • Business Logic│
+                       │ • Database      │
+                       │ • Full Control  │
+                       │ • Flexibility   │
+                       └─────────────────┘
 ```
 
 ---
@@ -49,13 +73,44 @@ Core Capabilities:
 
 ### **How It Works**
 ```
-Request Flow:
-1. Client Request → API Gateway
-2. Authentication & Validation → Built-in security checks
-3. Request Transformation → Modify headers/body if needed
-4. Backend Integration → Route to appropriate service
-5. Response Processing → Transform response if needed
-6. Client Response → Return processed response
+┌─────────────────┐
+│ 1. Client       │
+│ Request         │
+└─────────┬───────┘
+          │
+          ▼
+┌─────────────────┐
+│ 2. API Gateway  │
+│ Authentication  │
+│ & Validation    │
+└─────────┬───────┘
+          │
+          ▼
+┌─────────────────┐
+│ 3. Request      │
+│ Transformation  │
+│ (if needed)     │
+└─────────┬───────┘
+          │
+          ▼
+┌─────────────────┐
+│ 4. Backend      │
+│ Integration     │
+│ Route to Service│
+└─────────┬───────┘
+          │
+          ▼
+┌─────────────────┐
+│ 5. Response     │
+│ Processing      │
+│ Transform & Send│
+└─────────┬───────┘
+          │
+          ▼
+┌─────────────────┐
+│ 6. Client       │
+│ Response        │
+└─────────────────┘
 ```
 
 ### **Integration Types**
@@ -274,12 +329,24 @@ def route_request(service_name, request_data):
 
 ### **Recommended Architecture**
 ```
-Employee Portal (Amplify) → Custom API Gateway App → Internal ALB → Backend Services
-                            (ECS Fargate)            (Host Routing)  (EMP,CORE,AUTH,FILES)
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Employee Portal │───▶│ Custom API      │───▶│  Internal ALB   │───▶│ Backend Services│
+│   (Amplify)     │    │ Gateway App     │    │                 │    │                 │
+│                 │    │ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
+│ ┌─────────────┐ │    │ │Host Header  │ │    │ │emp.internal │ │    │ │ EMP:3000    │ │
+│ │ S3 + CDN    │ │    │ │Routing Logic│ │    │ │→ EMP        │ │    │ │ CORE:3001   │ │
+│ │ AngularJS   │ │    │ └─────────────┘ │    │ │core.internal│ │    │ │ AUTH:3002   │ │
+│ └─────────────┘ │    │ ┌─────────────┐ │    │ │→ CORE       │ │    │ │ FILES:3003  │ │
+│                 │    │ │Business     │ │    │ │auth.internal│ │    │ └─────────────┘ │
+│                 │    │ │Logic        │ │    │ │→ AUTH       │ │    │                 │
+│                 │    │ │Database     │ │    │ │files.internal│ │   │                 │
+│                 │    │ └─────────────┘ │    │ │→ FILES      │ │    │                 │
+└─────────────────┘    └─────────────────┘    │ └─────────────┘ │    └─────────────────┘
+                                              └─────────────────┘
 
 Benefits:
 ├── Leverages existing investment
-├── Maintains custom business logic
+├── Maintains custom business logic  
 ├── Adds Internal ALB for better backend management
 ├── Reduces overall project risk
 └── Faster time-to-market
@@ -292,22 +359,42 @@ Benefits:
 ### **Phase 1: Enhance Current Setup (Recommended)**
 ```
 Week 1-2: Internal ALB Setup
-├── Create Internal ALB with host-based routing
-├── Configure target groups for each microservice
-├── Update Custom API Gateway App for host headers
-└── Test end-to-end connectivity
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Create Internal │───▶│ Configure Target│───▶│ Update API      │
+│ ALB with Host   │    │ Groups for Each │    │ Gateway App for │
+│ Based Routing   │    │ Microservice    │    │ Host Headers    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                        │
+                                                        ▼
+                                              ┌─────────────────┐
+                                              │ Test End-to-End │
+                                              │ Connectivity    │
+                                              └─────────────────┘
 
 Week 3: Integration Testing
-├── Update Employee Portal UI (Amplify)
-├── Test authentication flows
-├── Performance and load testing
-└── Security validation
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Update Employee │───▶│ Test Auth       │───▶│ Performance &   │
+│ Portal UI       │    │ Flows           │    │ Load Testing    │
+│ (Amplify)       │    │                 │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                        │
+                                                        ▼
+                                              ┌─────────────────┐
+                                              │ Security        │
+                                              │ Validation      │
+                                              └─────────────────┘
 
 Week 4: Go-Live
-├── Deploy to production
-├── Monitor performance
-├── Gradual traffic migration
-└── Documentation and handover
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Deploy to       │───▶│ Monitor         │───▶│ Documentation   │
+│ Production      │    │ Performance     │    │ & Handover      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │
+                                ▼
+                       ┌─────────────────┐
+                       │ Gradual Traffic │
+                       │ Migration       │
+                       └─────────────────┘
 ```
 
 ### **Future Consideration: AWS API Gateway Migration**
