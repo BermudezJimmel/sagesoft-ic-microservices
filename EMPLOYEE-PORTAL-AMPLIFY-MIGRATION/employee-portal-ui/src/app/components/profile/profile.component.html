@@ -1,0 +1,107 @@
+<div class="profile-header">
+  <div class="header-content">
+    <h1>My Profile</h1>
+    <p>Manage your employee information</p>
+  </div>
+  
+  <div class="action-buttons">
+    <button class="btn btn-secondary" (click)="goToDashboard()">Back to Dashboard</button>
+    <button class="btn btn-secondary" (click)="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="profile-content">
+  <div class="card">
+    <div *ngIf="loading" class="loading">
+      Loading profile...
+    </div>
+
+    <form *ngIf="!loading" [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Full Name *</label>
+          <input 
+            type="text" 
+            id="name"
+            class="form-control"
+            formControlName="name"
+            placeholder="Enter your full name"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address *</label>
+          <input 
+            type="email" 
+            id="email"
+            class="form-control"
+            formControlName="email"
+            placeholder="Enter your email"
+          >
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="department">Department *</label>
+          <input 
+            type="text" 
+            id="department"
+            class="form-control"
+            formControlName="department"
+            placeholder="Enter your department"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="position">Position *</label>
+          <input 
+            type="text" 
+            id="position"
+            class="form-control"
+            formControlName="position"
+            placeholder="Enter your position"
+          >
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="phone">Phone Number</label>
+          <input 
+            type="tel" 
+            id="phone"
+            class="form-control"
+            formControlName="phone"
+            placeholder="Enter your phone number"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="startDate">Start Date</label>
+          <input 
+            type="date" 
+            id="startDate"
+            class="form-control"
+            formControlName="startDate"
+          >
+        </div>
+      </div>
+
+      <div class="message" *ngIf="message" [class.success]="message.includes('successfully')" [class.error]="!message.includes('successfully')">
+        {{ message }}
+      </div>
+
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          class="btn btn-primary"
+          [disabled]="saving || profileForm.invalid"
+        >
+          <span *ngIf="saving">Saving...</span>
+          <span *ngIf="!saving">Save Changes</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

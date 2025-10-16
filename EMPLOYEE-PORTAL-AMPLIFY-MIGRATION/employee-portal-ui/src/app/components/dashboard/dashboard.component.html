@@ -1,0 +1,55 @@
+<div class="dashboard-header">
+  <div class="welcome-section">
+    <h1>Welcome, {{ currentUser?.name || 'Employee' }}!</h1>
+    <p>Employee Portal Dashboard</p>
+  </div>
+  
+  <div class="action-buttons">
+    <button class="btn btn-primary" (click)="goToProfile()">My Profile</button>
+    <button class="btn btn-secondary" (click)="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="dashboard-content">
+  <div class="stats-section">
+    <div class="stat-card">
+      <h3>Total Employees</h3>
+      <div class="stat-number">{{ employees.length }}</div>
+    </div>
+    
+    <div class="stat-card">
+      <h3>My Department</h3>
+      <div class="stat-text">{{ currentUser?.department || 'N/A' }}</div>
+    </div>
+    
+    <div class="stat-card">
+      <h3>My Position</h3>
+      <div class="stat-text">{{ currentUser?.position || 'N/A' }}</div>
+    </div>
+  </div>
+
+  <div class="employees-section">
+    <div class="card">
+      <h2>Employee Directory</h2>
+      
+      <div *ngIf="loading" class="loading">
+        Loading employees...
+      </div>
+      
+      <div *ngIf="!loading && employees.length === 0" class="no-data">
+        No employees found.
+      </div>
+      
+      <div *ngIf="!loading && employees.length > 0" class="employees-grid">
+        <div class="employee-card" *ngFor="let employee of employees">
+          <div class="employee-info">
+            <h4>{{ employee.name }}</h4>
+            <p class="employee-email">{{ employee.email }}</p>
+            <p class="employee-department">{{ employee.department }}</p>
+            <p class="employee-position">{{ employee.position }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
